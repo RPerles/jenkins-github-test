@@ -39,9 +39,11 @@ pipeline {
         
         stage('build docker image') {
             steps {
-                dockerNode('docker') {
-                    // some block
-                }           
+                dockerNode('jenkins/jnlp-agent-maven') {
+    git 'https://github.com/jglick/simple-maven-project-with-tests'
+    sh 'mvn -B -Dmaven.test.failure.ignore install'
+    junit '**/target/surefire-reports/TEST-*.xml'
+}
             }
         }
 
