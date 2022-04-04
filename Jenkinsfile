@@ -37,7 +37,7 @@ pipeline {
  
         }
         
-        stage('build') {
+        stage('docker version') {
             steps {
                 nodejs(nodeJSInstallationName: 'Node 16 LTS') {
                     sh 'docker --version'
