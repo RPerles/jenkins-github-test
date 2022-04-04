@@ -1,58 +1,119 @@
 pipeline {
-//    agent { docker { image 'node:16.13.1-alpine' } }
-    
 
+   triggers {
+    pollSCM('*/1 * * * *')
+   }
 
-    environment { 
-        registry = "progradius/coursdevops" 
-        registryCredential = 'dockerhub_id' 
-        dockerImage = '' 
+    agent {
+      kubernetes {
+
+yaml '''
+kind: Pod
+spec:
+  containers:
+
+  - name: node
+    image: node
+    command:
+    - cat
+    tty: true
+
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:debug-539ddefcae3fd6b411a95982a830d987f4214251
+    imagePullPolicy: Always
+    command:
+    - /busybox/cat
+    tty: true
+    volumeMounts:
+      - name: docker-registry-key
+        mountPath: /kaniko/.docker
+      - name: endpoints
+        mountPath: /kaniko/endpoints
+    resources:
+      limits:
+        memory: 2Gi
+
+  volumes:
+  - name: docker-registry-key
+    projected:
+      sources:
+      - secret:
+          name: docker-registry-key
+          items:
+            - key: .dockerconfigjson
+              path: config.json
+  
+  - name: endpoints
+    configMap:
+      name: endpoints
+'''
+        defaultContainer 'kaniko'
+      }
     }
 
-
-    agent any
+    options {
+        buildDiscarder logRotator(
+                    daysToKeepStr: '16',
+                    numToKeepStr: '10'
+            )
+        disableConcurrentBuilds()
+    }
 
     stages {
-        stage('echo npm version') {
-            steps {
-                nodejs(nodeJSInstallationName: 'Node 16 LTS') {
-                    sh 'npm --version'
-                }
-            }
-        }
-        stage('test') {
-            steps {
-                nodejs(nodeJSInstallationName: 'Node 16 LTS') {
-                    sh 'npm install'
-                    sh 'npm test'
-                }
-            }
-        }
-        stage('build') {
-            steps {
-                nodejs(nodeJSInstallationName: 'Node 16 LTS') {
-                    sh 'npm run build'
-                }
-            }           
- 
-        }
-        
-        stage('build docker image') {
-            steps {
-                script {
-                dockerImage = docker.build registry + ":$BUILD_NUMBER"
-              }           
-            }
-        }
 
-            
-        stage('Deploy our image') { 
-            steps { 
-                script { 
-                    docker.withRegistry( '', registryCredential ) { 
-                        dockerImage.push() 
-                    }
-                } 
+        //Main Branch
+        stage('Build and Deploy Main Branch ') {
+
+            environment {
+                PROJECT_NAME = "${JOB_NAME.split("/")[2]}"
+
+                REPO_URL = 'https://github.com/RPerles/jenkins-github-test'
+
+                DOCKER_REPO = 'progradius/coursdevops'
+                DOCKER_IMAGE = "${DOCKER_REPO}:latest"
+
+            }
+
+            stages {
+
+              stage('Cloning Repository') {
+
+                steps {
+
+                    checkout([$class: 'GitSCM',
+                    branches: [[name: '*/master']],
+                    doGenerateSubmoduleConfigurations: false,
+                    userRemoteConfigs: [[credentialsId: 'github', url:"${REPO_URL}"]]])
+                }
+              }
+
+              stage('Building Image') {
+
+                steps {
+
+                    echo 'Building Image'
+
+                    sh '''/kaniko/executor -f ./Dockerfile -c `pwd` --verbosity info --cache=false --destination=${DOCKER_IMAGE}'''
+
+
+                }
+              }
+
+            }
+
+            post {
+
+                success {
+
+                    echo 'Success'
+
+                }
+
+                failure {
+
+                    echo 'Failure'
+
+                }
             }
         }
     }
