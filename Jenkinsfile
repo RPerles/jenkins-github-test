@@ -7,10 +7,6 @@ pipeline {
         registry = "progradius/coursdevops" 
         registryCredential = 'dockerhub_id' 
         dockerImage = '' 
-        tools {
-            docker =  'org.jenkinsci.plugins.docker.commons.tools.DockerTool'
-        }
-
     }
 
 
@@ -43,9 +39,7 @@ pipeline {
 
                 stage('build docker image') {
             steps {
-                script { 
-                    dockerImage = docker.build registry + ":$BUILD_NUMBER" 
-                   } 
+                   dockerImage = docker.build registry + ":$BUILD_NUMBER" 
                 }
             }
             
