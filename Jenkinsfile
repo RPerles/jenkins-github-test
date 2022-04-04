@@ -37,13 +37,20 @@ pipeline {
  
         }
         
-        stage('build docker image') {
-            steps {
-withDockerRegistry(credentialsId: 'dockerhub_id', toolName: 'docker', url: 'https://hub.docker.com/repository/docker/progradius/coursdevops') {
-    // some block
-                        dockerImage = docker.build registry + ":$BUILD_NUMBER" 
-}            }
-        }
+        stage('Deploy our image') { 
+            steps { 
+               script { 
+                    docker.withRegistry( '', registryCredential ) { 
+                        dockerImage.push() 
+
+                    }
+
+                } 
+
+            }
+
+        } 
+
 
             
         stage('Deploy our image') { 
