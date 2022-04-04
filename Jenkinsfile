@@ -39,8 +39,10 @@ pipeline {
         
         stage('build docker image') {
             steps {
-            [$class: 'DockerBuilderPublisher', cleanImages: false, cleanupWithJenkinsJobDelete: false, cloud: 'docker', dockerFileDirectory: '', fromRegistry: ['progradius/coursdevops'], pushCredentialsId: 'dockerhub_id', pushOnSuccess: true, tagsString: 'xxx']
-            }
+withDockerRegistry(credentialsId: 'dockerhub_id', toolName: 'docker', url: 'https://hub.docker.com/repository/docker/progradius/coursdevops') {
+    // some block
+                        dockerImage = docker.build registry + ":$BUILD_NUMBER" 
+}            }
         }
 
             
