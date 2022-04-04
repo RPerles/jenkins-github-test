@@ -36,9 +36,11 @@ pipeline {
             }           
  
         }
-        stage('build image') { step([$class: 'DockerBuilderPublisher', cleanImages: false, cleanupWithJenkinsJobDelete: false, cloud: 'docker', dockerFileDirectory: '', fromRegistry: [progradius/coursdevops], pushCredentialsId: 'dockerhub_id', pushOnSuccess: true, tagsString: 'xxx']) }
-
+        
         stage('build docker image') {
+            steps {
+            [$class: 'DockerBuilderPublisher', cleanImages: false, cleanupWithJenkinsJobDelete: false, cloud: 'docker', dockerFileDirectory: '', fromRegistry: [progradius/coursdevops], pushCredentialsId: 'dockerhub_id', pushOnSuccess: true, tagsString: 'xxx']
+            }
         }
 
             
