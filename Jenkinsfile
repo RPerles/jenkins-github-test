@@ -38,13 +38,7 @@ pipeline {
         }
         
         stage('build docker image') {
-            steps {
-                dockerNode('docker') {
-                sh "ls -al"
-                sh "docker -version"
-                sh 'docker build --force-rm -t nodejs:test .'
-}
-            }
+stage('build image') { step([$class: 'DockerBuilderPublisher', cleanImages: false, cleanupWithJenkinsJobDelete: false, cloud: 'docker', dockerFileDirectory: '', fromRegistry: [progradius/coursdevops], pushCredentialsId: 'dockerhub_id', pushOnSuccess: true, tagsString: 'xxx']) }
         }
 
             
